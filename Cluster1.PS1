@@ -5,6 +5,9 @@ Creation Date........2/15/2021
 Description
 =============================================================
 This script configures CFS / NFS / IscSI on a Netapp filer.
+PreRequisites:
+  Basic 2 node cluster must be setup
+  FlackboxA.Lab Domain Controller must be setup
 
 
 
@@ -22,8 +25,8 @@ https://netapp.io/2017/03/17/automate-cluster-setup-12-steps-with-ontap-powershe
 #>
 
 #SETUP Global Variables
-# define the cluster to connect to
-$filer = "172.23.1.44"
+# define the cluster to connect to 
+$filer = "172.23.1.11"
 
 #$Credential = Get-Credential
 $password = ConvertTo-SecureString -AsPlainText -Force P@ssw0rd # Update this to whatever the password of the netapp cluster is. 
@@ -50,18 +53,17 @@ YBSOYRRRYVHXCFABGAAAAAAAAAAA,KQSRRRRRYVHXCFABGAAAAAAAAAAA,MBXNQRRRYVHXCFABGAAAAA
 CYAHWRRRYVHXCFABGAAAAAAAAAAA,GUJZTRRRYVHXCFABGAAAAAAAAAAA,OSYVWRRRYVHXCFABGAAAAAAAAAAA,UZLKTRRRYVHXCFABGAAAAAAAAAAA,EJFDVRRRYVHXCFABGAAAAAAAAAAA
 
 # License for Node 2
-# Add-NcLicense -License MHEYKUNFXMSMUCEZFAAAAAAAAAAA,KWZBMUNFXMSMUCEZFAAAAAAAAAAA,GARJOUNFXMSMUCEZFAAAAAAAAAAA,`
-# MNBKSUNFXMSMUCEZFAAAAAAAAAAA,YBCNLUNFXMSMUCEZFAAAAAAAAAAA,ANGJKUNFXMSMUCEZFAAAAAAAAAAA,EPMNPUNFXMSMUCEZFAAAAAAAAAAA,`
-# QJKCQUNFXMSMUCEZFAAAAAAAAAAA,UFTUNUNFXMSMUCEZFAAAAAAAAAAA,CEIRQUNFXMSMUCEZFAAAAAAAAAAA,ILVFNUNFXMSMUCEZFAAAAAAAAAAA,SUOYOUNFXMSMUCEZFAAAAAAAAAAA
+Add-NcLicense -License MHEYKUNFXMSMUCEZFAAAAAAAAAAA,KWZBMUNFXMSMUCEZFAAAAAAAAAAA,GARJOUNFXMSMUCEZFAAAAAAAAAAA,`
+MNBKSUNFXMSMUCEZFAAAAAAAAAAA,YBCNLUNFXMSMUCEZFAAAAAAAAAAA,ANGJKUNFXMSMUCEZFAAAAAAAAAAA,EPMNPUNFXMSMUCEZFAAAAAAAAAAA,`
+QJKCQUNFXMSMUCEZFAAAAAAAAAAA,UFTUNUNFXMSMUCEZFAAAAAAAAAAA,CEIRQUNFXMSMUCEZFAAAAAAAAAAA,ILVFNUNFXMSMUCEZFAAAAAAAAAAA,SUOYOUNFXMSMUCEZFAAAAAAAAAAA
 
 # Configure time settings to UTC and NTP server
-# FlackboxB domain...
-New-NcNtpServer -ServerName 172.23.5.1 -IsPreferred
+# FlackboxA domain...
+New-NcNtpServer -ServerName 172.23.4.1 -IsPreferred
 # Make sure that you don't specify a node when setting the cluster time
 Set-NcTime -Timezone UTC
 Set-NcTime -DateTime (get-date)
-#Set-NcTime -Timezone America/Denver
-Get-NcTime
+
 
 #--------------------------- CIFS Server -----------------------------------
 # Create Aggregate
@@ -73,7 +75,7 @@ Remove-NcVserverProtocol -Name C1CIFS -Protocol nfs,fcp,iscsi #Since there is no
 Add-NcVserverProtocol -Name C1CIFS -Protocol cifs
 
 # Create Data Lifs
-New-NcNetInterface -Name C1CIFS_LIF1 -Vserver C1CIFS -Role data -Node C4N1-01 -Port e0d -DataProtocols cifs -Address 172.23.2.45 -Netmask 255.255.255.0 -FirewallPolicy data -AdministrativeStatus up
+New-NcNetInterface -Name C1CIFS_LIF1 -Vserver C1CIFS -Role data -Node (edit for node name) -Port e0d -DataProtocols cifs -Address 172.23.2.45 -Netmask 255.255.255.0 -FirewallPolicy data -AdministrativeStatus up
 New-NcNetRoute -Destination 0.0.0.0/0 -Gateway 172.23.2.254 -VserverContext C1CIFS
 New-NcNetDns -Domains flackboxb.lab -NameServers 172.23.5.1 -VserverContext C1CIFS #configure DNS for cifs server
 
